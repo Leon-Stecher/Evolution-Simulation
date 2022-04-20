@@ -1,18 +1,10 @@
 from threading import current_thread
 import numpy as np
 
-class Node:
-    def __init__(self, parent, height, width, root):
-        self.parent = parent
-        self.l = height
-        self.width = width
-        self.root = root
-        self.children = []
-
 class Plant:
     
     def __init__(self, genome, sun_units, root):
-        self.genome = genome # Is an instance of Node()
+        self.genome = genome
         self.state = True # True means alive.
         self.sun_units = sun_units # Equivalent to available food
         self.root = root
@@ -46,25 +38,32 @@ class Garden:
             # sunlight is collected.
             pass
 
-    def grow(self, plant_id, day):
+    def grow(self, plant_id, days=None):
+        # Updates the garden_matrix.
+        plant = self.population[plant_id]
+        mtx = self.garden_matrix[:,:,plant_id]
+        X = plant.root
+        Z = 0
+        if days == None:
+            days = len(plant.genome)
+
+        # Add vertical bar of the T:
+        t_height = plant.genome[0,0]
+        mtx = mtx[X, Z:Z + t_height]
+        Z += t_height + 1
+
+        # Add the horizontal bar of the T:
+        t_width = plant.genome[0,1]
+        mtx = mtx[X - (1 + t_width):X - (1 + t_width), Z]
+        Z += t_height + 1
         
-        def new_growth(node, day):
-            if day == 0:
-                height, width = node.value
-                if self.population[plant_id].sun_units <= height + width - 1:
-                    # Update self.garden_matrix unless the new T is outside the garden.
-                    
-                    self.garden_matrix
-                    
-                else:
-                    self.population[plant_id].state = False
-                    print('R.I.P.')
-                    return
-            else:
-                for child_node in node.children:
-                    new_growth(child_node, day-1)
-        
-        new_growth(self.population[plant_id].genome, day)
+        for day in range(1, days):
+            t_height = plant.genome[day,0]
+            t_width = plant.genome[day,1]
+            
+
+
+
 
 
 
