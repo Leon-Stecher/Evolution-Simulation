@@ -1,6 +1,7 @@
 from operator import le
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import animation
 
 def genome_to_direction(genome):
     if genome == 0:
@@ -67,10 +68,12 @@ class Garden:
         self.grow_plants()
         image = self.matrix.max(axis=2)
         image = image[:,::-1].T
-        plt.figure(figsize=(10,8))
-        plt.imshow(image)#, interpolation='nearest')
-        plt.xlabel('X-Achse')
-        plt.show()
+        return image
+        # plt.figure(figsize=(10,8))
+        # plt.imshow(image)#, interpolation='nearest')
+        # plt.xlabel('X-Achse')
+        # plt.show()
+        
 
 
 class Evolution:
@@ -97,7 +100,7 @@ class Evolution:
             # The number of offsprings each surviving plant gets to have is 
             # anti-proportional to the total number of survivers, e. g. the 
             # population size stayes constant. (or does it? that for later projects)
-            old_population = list(np.array(self.population)[np.array(fitness) > np.max(fitness) / 2])
+            old_population = list(np.array(self.population)[np.array(fitness) >  np.mean(fitness)/2])
 
             print(f'# Survivors: {len(old_population)}, mean fitness: {round(np.mean(fitness), 2)}',)
             # print(len(old_population))
@@ -121,6 +124,72 @@ class Evolution:
         print(fitness)
         print([plant.root for plant in mygarden.population])
         mygarden.display()
+
+        self.population = mygarden.population
+
+    def run_animation(self, generations=100, length_garden=100):
+        # Assuming the following steps have already been taken:
+        #  - Initialize Population
+        #  - Generate random root for each plant
+        #  - Generate random genomes for each plant
+
+        """ The Garden Eden: """
+
+        mygarden = Garden(self.population, length=length_garden)
+        mygarden.display()
+
+        """ Animation Setup: """
+
+        fig = plt.figure()
+        im = plt.imshow(mygarden.display(), animated=True)
+
+        """ Evolution: """
+
+        # for i in range(generations):
+        def evolution_step(i, mygarden):
+            # Calculate fitness of each plant. -> is it dead or alive
+            # The calcuation is equivialent to running the simulation.
+            fitness = mygarden.get_sun_units()
+            
+            # All survivors procreate without cross mutation.
+            # The number of offsprings each surviving plant gets to have is 
+            # anti-proportional to the total number of survivers, e. g. the 
+            # population size stayes constant. (or does it? that for later projects)
+            old_population = list(np.array(self.population)[np.array(fitness) > np.mean(fitness)/2])
+
+            print(f'# Survivors: {len(old_population)}, mean fitness: {round(np.mean(fitness), 2)}',)
+            # print(len(old_population))
+            if len(old_population) == 0:
+                print(fitness)
+
+            # Rebirth the population in equal parts from the parents.
+            population = np.array(old_population * (int(self.population_size / len(old_population)) + 1))[0:self.population_size]
+
+            # The new population is at that point a multiset of copies of the survivors genes.
+            # Mutate the genomess of every plant in the population
+            for plant in population:
+                plant.mutate() # Mutates the genomes
+                plant.sun_units = 0
+                plant.root = np.random.randint(0, mygarden.length)
+            
+            # Replant the garden with the new population of plants
+            mygarden = Garden(population,  length=length_garden)
+
+            im.set_array(mygarden.display())
+            return im,
+
+        # call the animator.  blit=True means only re-draw the parts that have changed.       
+
+        print('Animation function is called  :') 
+         
+        ani = animation.FuncAnimation(fig, evolution_step, frames=generations, interval=50, blit=True, fargs=(mygarden,))
+        ani.event_source.start()
+        plt.show()
+        
+        # print('Len ', len(mygarden.population))
+        # print(fitness)
+        # print([plant.root for plant in mygarden.population])
+        # mygarden.display()
 
         self.population = mygarden.population
             
